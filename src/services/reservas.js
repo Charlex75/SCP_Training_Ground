@@ -1,6 +1,9 @@
+import { z } from "zod";
+import { esquemaGuardada } from "../schemas/reservaGuardada";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Obtener reservas, opcionalmente filtradas por fecha
+// Obtener reservas y validar los datos recibidos
 export async function obtenerReservas(fecha) {
   const url = fecha
     ? `${API_URL}/reservas?fecha=${encodeURIComponent(fecha)}`
@@ -22,8 +25,35 @@ export async function obtenerReservas(fecha) {
     );
   }
 
-  return response.json();
+  // Interpretar la respuesta del servidor
+  let json;
+
+  try {
+    json = await response.json();
+  } catch {
+    throw new Error(
+      "DATOS CORRUPTOS: respuesta ilegible del servidor del Sitio"
+    );
+  }
+
+  // Validar cada reserva recibida
+  const resultado = z.array(esquemaGuardada).safeParse(json);
+
+  if (!resultado.success) {
+    console.error(
+      "Registros corruptos detectados:",
+      resultado.error.issues
+    );
+
+    throw new Error(
+      "DATOS CORRUPTOS: el archivo de reservas contiene registros inválidos"
+    );
+  }
+
+  // Devolver únicamente datos validados
+  return resultado.data;
 }
+
 
 // Crear una nueva reserva
 export async function crearReserva(datos) {
