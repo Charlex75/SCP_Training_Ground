@@ -7,16 +7,16 @@ import {
 import {
   obtenerReservas,
   crearReserva,
+  cancelarReserva,
 } from "../services/reservas";
 
-// Clave compartida para la caché
 export const CLAVE_RESERVAS = ["reservas"];
 
-// Consultar reservas
-export function useReservas() {
+// Consultar todas las reservas o filtrar por fecha
+export function useReservas(fecha) {
   return useQuery({
-    queryKey: CLAVE_RESERVAS,
-    queryFn: obtenerReservas,
+    queryKey: [...CLAVE_RESERVAS, fecha ?? "todas"],
+    queryFn: () => obtenerReservas(fecha),
   });
 }
 
@@ -28,7 +28,22 @@ export function useCrearReserva() {
     mutationFn: crearReserva,
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      return queryClient.invalidateQueries({
+        queryKey: CLAVE_RESERVAS,
+      });
+    },
+  });
+}
+
+// Cancelar una reserva
+export function useCancelarReserva() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: cancelarReserva,
+
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
         queryKey: CLAVE_RESERVAS,
       });
     },

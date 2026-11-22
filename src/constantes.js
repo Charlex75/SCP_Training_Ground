@@ -18,3 +18,5 @@ export const EDAD_MINIMA = 18;
 export const EDAD_CON_AUTORIZACION = 16;
 
 export const MAX_ACOMPANANTES = 5;
+
+export const PLAZAS_POR_BANDO = 12;

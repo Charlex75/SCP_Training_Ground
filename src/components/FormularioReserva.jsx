@@ -2,6 +2,7 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { esquemaReserva } from "../schemas/reserva";
+
 import {
   BANDOS,
   NOMBRES_BANDOS,
@@ -10,12 +11,19 @@ import {
   EDAD_CON_AUTORIZACION,
   EDAD_MINIMA,
   MAX_ACOMPANANTES,
+  PLAZAS_POR_BANDO,
 } from "../constantes";
 
 import Campo from "./Campo";
 import MensajeError from "./MensajeError";
+import Ocupacion from "./Ocupacion";
 
-import { useCrearReserva } from "../hooks/useReservas";
+import {
+  useCrearReserva,
+  useReservas,
+} from "../hooks/useReservas";
+
+import { calcularOcupacion } from "../utils/plazas";
 
 export default function FormularioReserva() {
   const {
@@ -23,7 +31,8 @@ export default function FormularioReserva() {
     handleSubmit,
     control,
     reset,
-    formState: { errors, isSubmitting },
+    setError,
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(esquemaReserva),
 
@@ -47,7 +56,15 @@ export default function FormularioReserva() {
     },
   });
 
+  // Mutación para crear reservas
   const mutacion = useCrearReserva();
+
+  // Consulta de reservas para comprobar el aforo
+  const {
+    data: reservas = [],
+    isPending: cargandoReservas,
+    isError: errorReservas,
+  } = useReservas();
 
   // Lista dinámica de acompañantes
   const { fields, append, remove } = useFieldArray({
@@ -55,17 +72,83 @@ export default function FormularioReserva() {
     name: "acompanantes",
   });
 
-  // Campos que determinan qué mostrar
-  const tipoEquipo = useWatch({control, name: "equipo.tipo"});
-  const edad = useWatch({control, name: "edad"});
+  // Campos observados
+  const tipoEquipo = useWatch({
+    control,
+    name: "equipo.tipo",
+  });
 
+  const edad = useWatch({
+    control,
+    name: "edad",
+  });
+
+  const fechaSeleccionada = useWatch({
+    control,
+    name: "fecha",
+  });
+
+  // Autorización necesaria para agentes de 16 y 17 años
   const necesitaAutorizacion =
     edad !== "" &&
     Number(edad) >= EDAD_CON_AUTORIZACION &&
     Number(edad) < EDAD_MINIMA;
 
-  // De momento, solo mostramos los datos
+  // Enviar reserva comprobando previamente las plazas
   const onSubmit = (datos) => {
+    // Limpiar el estado del envío anterior
+    mutacion.reset();
+
+    // 1. Comprobar si podemos consultar el aforo
+    if (cargandoReservas || errorReservas) {
+      setError(
+        "bando",
+        {
+          type: "manual",
+          message:
+            "ENLACE NO DISPONIBLE: no se puede verificar el aforo",
+        },
+        { shouldFocus: true }
+      );
+      return;
+    }
+
+    // 2. Calcular la ocupación para la fecha elegida
+    const ocupacion = calcularOcupacion(
+      reservas,
+      datos.fecha
+    );
+
+    // 3. Contar las plazas necesarias
+    const plazasNecesarias =
+      1 + datos.acompanantes.length;
+
+    // 4. Calcular las plazas disponibles
+    const plazasDisponibles =
+      PLAZAS_POR_BANDO - ocupacion[datos.bando];
+
+    // 5. Comprobar si el sector está lleno
+    if (plazasNecesarias > plazasDisponibles) {
+      const disponibles = Math.max(0, plazasDisponibles);
+
+      const mensaje =
+        disponibles === 1
+          ? "SECTOR SATURADO: solo queda 1 plaza disponible"
+          : `SECTOR SATURADO: solo quedan ${disponibles} plazas disponibles`;
+
+      setError(
+        "bando",
+        {
+          type: "manual",
+          message: mensaje,
+        },
+        { shouldFocus: true }
+      );
+
+      return;
+    }
+
+    // 6. Enviar la reserva si todo es correcto
     mutacion.mutate(datos, {
       onSuccess: () => reset(),
     });
@@ -73,7 +156,6 @@ export default function FormularioReserva() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-
       <fieldset>
         <legend>Identificación del agente</legend>
 
@@ -124,6 +206,7 @@ export default function FormularioReserva() {
                     : undefined
                 }
               />
+
               Dispongo de autorización de mi tutor
             </label>
 
@@ -141,6 +224,9 @@ export default function FormularioReserva() {
           registro={register("fecha")}
           error={errors.fecha}
         />
+
+        {/* Ocupación para la fecha seleccionada */}
+        <Ocupacion fecha={fechaSeleccionada} />
       </fieldset>
 
       <fieldset
@@ -158,6 +244,7 @@ export default function FormularioReserva() {
               value={bando}
               {...register("bando")}
             />
+
             {NOMBRES_BANDOS[bando]}
           </label>
         ))}
@@ -187,6 +274,7 @@ export default function FormularioReserva() {
               value="alquiler"
               {...register("equipo.tipo")}
             />
+
             Equipo de alquiler
           </label>
 
@@ -196,6 +284,7 @@ export default function FormularioReserva() {
               value="propio"
               {...register("equipo.tipo")}
             />
+
             Equipo propio
           </label>
 
@@ -207,7 +296,9 @@ export default function FormularioReserva() {
 
         {tipoEquipo === "alquiler" && (
           <div>
-            <label htmlFor="talla">Talla del equipo</label>
+            <label htmlFor="talla">
+              Talla del equipo
+            </label>
 
             <select
               id="talla"
@@ -219,7 +310,9 @@ export default function FormularioReserva() {
                   : undefined
               }
             >
-              <option value="">Selecciona una talla</option>
+              <option value="">
+                Selecciona una talla
+              </option>
 
               {TALLAS.map((talla) => (
                 <option key={talla} value={talla}>
@@ -252,10 +345,15 @@ export default function FormularioReserva() {
                     : undefined
                 }
               >
-                <option value="">Selecciona una réplica</option>
+                <option value="">
+                  Selecciona una réplica
+                </option>
 
                 {Object.keys(LIMITES_FPS).map((replica) => (
-                  <option key={replica} value={replica}>
+                  <option
+                    key={replica}
+                    value={replica}
+                  >
                     {replica}
                   </option>
                 ))}
@@ -311,8 +409,12 @@ export default function FormularioReserva() {
 
         <button
           type="button"
-          onClick={() => append({ designacion: "" })}
-          disabled={fields.length >= MAX_ACOMPANANTES}
+          onClick={() =>
+            append({ designacion: "" })
+          }
+          disabled={
+            fields.length >= MAX_ACOMPANANTES
+          }
         >
           Añadir agente
         </button>
@@ -334,6 +436,7 @@ export default function FormularioReserva() {
                   : undefined
               }
             />
+
             Confirmo el uso de protección ocular
           </label>
 
@@ -356,6 +459,7 @@ export default function FormularioReserva() {
                   : undefined
               }
             />
+
             Acepto las normas del recinto
           </label>
 
@@ -366,9 +470,13 @@ export default function FormularioReserva() {
         </div>
       </fieldset>
 
-
-      <button type="submit" disabled={mutacion.isPending}>
-        {mutacion.isPending ? "Procesando…" : "Solicitar despliegue"}
+      <button
+        type="submit"
+        disabled={mutacion.isPending}
+      >
+        {mutacion.isPending
+          ? "Procesando…"
+          : "Solicitar despliegue"}
       </button>
 
       {mutacion.isSuccess && (
@@ -382,7 +490,6 @@ export default function FormularioReserva() {
           {mutacion.error.message}
         </p>
       )}
-
     </form>
   );
 }

@@ -1,11 +1,15 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Obtener todas las reservas
-export async function obtenerReservas() {
+// Obtener reservas, opcionalmente filtradas por fecha
+export async function obtenerReservas(fecha) {
+  const url = fecha
+    ? `${API_URL}/reservas?fecha=${encodeURIComponent(fecha)}`
+    : `${API_URL}/reservas`;
+
   let response;
 
   try {
-    response = await fetch(`${API_URL}/reservas`);
+    response = await fetch(url);
   } catch {
     throw new Error(
       "ENLACE CAÍDO: no hay conexión con el servidor del Sitio"
@@ -46,4 +50,30 @@ export async function crearReserva(datos) {
   }
 
   return response.json();
+}
+
+// Cancelar una reserva existente
+export async function cancelarReserva(id) {
+  let response;
+
+  try {
+    response = await fetch(
+      `${API_URL}/reservas/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+      }
+    );
+  } catch {
+    throw new Error(
+      "ENLACE CAÍDO: no hay conexión con el servidor del Sitio"
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `CANCELACIÓN DENEGADA: error ${response.status} al cancelar el despliegue`
+    );
+  }
+
+  return id;
 }
