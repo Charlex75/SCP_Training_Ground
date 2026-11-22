@@ -1,14 +1,6 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  obtenerReservas,
-  crearReserva,
-  cancelarReserva,
-} from "../services/reservas";
+import { obtenerReservas, crearReserva, cancelarReserva } from "../services/reservas";
 
 export const CLAVE_RESERVAS = ["reservas"];
 
@@ -26,12 +18,7 @@ export function useCrearReserva() {
 
   return useMutation({
     mutationFn: crearReserva,
-
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: CLAVE_RESERVAS,
-      });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLAVE_RESERVAS }),
   });
 }
 
@@ -41,11 +28,6 @@ export function useCancelarReserva() {
 
   return useMutation({
     mutationFn: cancelarReserva,
-
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: CLAVE_RESERVAS,
-      });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLAVE_RESERVAS }),
   });
 }

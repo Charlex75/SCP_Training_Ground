@@ -13,12 +13,9 @@ import {
 // IDENTIFICACIÓN DE AGENTES
 // ==========================================
 
-const designacionSchema = z
-  .string()
-  .regex(/^[a-zA-Z0-9_-]{3,16}$/, {
-    error:
-      "IDENTIFICACIÓN INVÁLIDA: usa entre 3 y 16 caracteres (letras, números, - o _)",
-  });
+const designacionSchema = z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/, {
+  error: "IDENTIFICACIÓN INVÁLIDA: usa entre 3 y 16 caracteres (letras, números, - o _)",
+});
 
 // ==========================================
 // PROTOCOLO DE EQUIPAMIENTO
@@ -30,39 +27,24 @@ const equipoSchema = z.discriminatedUnion(
     // Equipo de alquiler
     z.object({
       tipo: z.literal("alquiler"),
-
       talla: z.enum(TALLAS, {
-        error:
-          "EQUIPAMIENTO NO DISPONIBLE: selecciona una talla válida",
+        error: "EQUIPAMIENTO NO DISPONIBLE: selecciona una talla válida",
       }),
     }),
 
     // Equipo propio
     z.object({
       tipo: z.literal("propio"),
-
       replica: z.enum(Object.keys(LIMITES_FPS), {
-        error:
-          "RÉPLICA NO AUTORIZADA: categoría desconocida",
+        error: "RÉPLICA NO AUTORIZADA: categoría desconocida",
       }),
-
       fps: z.coerce
-        .number({
-          error:
-            "LECTURA INVÁLIDA: introduce los FPS de la réplica",
-        })
-        .int({
-          error: "Los FPS deben ser un número entero",
-        })
-        .positive({
-          error: "Los FPS deben ser mayores que cero",
-        }),
+        .number({ error: "LECTURA INVÁLIDA: introduce los FPS de la réplica" })
+        .int({ error: "Los FPS deben ser un número entero" })
+        .positive({ error: "Los FPS deben ser mayores que cero" }),
     }),
   ],
-  {
-    error:
-      "PROTOCOLO DE EQUIPAMIENTO: selecciona un tipo de equipo válido",
-  }
+  { error: "PROTOCOLO DE EQUIPAMIENTO: selecciona un tipo de equipo válido" }
 );
 
 // ==========================================
@@ -72,71 +54,45 @@ const equipoSchema = z.discriminatedUnion(
 // Se reutiliza para validar reservas guardadas.
 
 export const esquemaReservaBase = z.object({
-  nombre: z
-    .string()
-    .trim()
-    .min(2, {
-      error:
-        "IDENTIFICACIÓN INVÁLIDA: mínimo 2 caracteres",
-    }),
-
-  email: z.email({
-    error:
-      "COMUNICACIÓN FALLIDA: correo electrónico no válido",
+  nombre: z.string().trim().min(2, {
+    error: "IDENTIFICACIÓN INVÁLIDA: mínimo 2 caracteres",
   }),
+
+  email: z.email({ error: "COMUNICACIÓN FALLIDA: correo electrónico no válido" }),
 
   designacion: designacionSchema,
 
   edad: z.coerce
-    .number({
-      error:
-        "REGISTRO INVÁLIDO: introduce una edad válida",
-    })
-    .int({
-      error:
-        "REGISTRO INVÁLIDO: la edad debe ser entera",
-    })
+    .number({ error: "REGISTRO INVÁLIDO: introduce una edad válida" })
+    .int({ error: "REGISTRO INVÁLIDO: la edad debe ser entera" })
     .min(EDAD_CON_AUTORIZACION, {
-      error:
-        "ACCESO DENEGADO: edad inferior al mínimo permitido",
+      error: "ACCESO DENEGADO: edad inferior al mínimo permitido",
     }),
 
   autorizacionTutor: z.boolean({
-    error:
-      "PROTOCOLO DE MENORES: indica si dispones de autorización",
+    error: "PROTOCOLO DE MENORES: indica si dispones de autorización",
   }),
 
-  fecha: z.iso.date({
-    error:
-      "FECHA INVÁLIDA: utiliza el formato AAAA-MM-DD",
-  }),
+  fecha: z.iso.date({ error: "FECHA INVÁLIDA: utiliza el formato AAAA-MM-DD" }),
 
   bando: z.enum(BANDOS, {
-    error:
-      "AFILIACIÓN DESCONOCIDA: selecciona un bando autorizado",
+    error: "AFILIACIÓN DESCONOCIDA: selecciona un bando autorizado",
   }),
 
   equipo: equipoSchema,
 
   acompanantes: z
-    .array(
-      z.object({
-        designacion: designacionSchema,
-      })
-    )
+    .array(z.object({ designacion: designacionSchema }))
     .max(MAX_ACOMPANANTES, {
-      error:
-        `LÍMITE DE PERSONAL: máximo ${MAX_ACOMPANANTES} acompañantes`,
+      error: `LÍMITE DE PERSONAL: máximo ${MAX_ACOMPANANTES} acompañantes`,
     }),
 
   proteccionOcular: z.literal(true, {
-    error:
-      "PROTOCOLO DE SEGURIDAD: protección ocular obligatoria",
+    error: "PROTOCOLO DE SEGURIDAD: protección ocular obligatoria",
   }),
 
   aceptaNormas: z.literal(true, {
-    error:
-      "ACCESO DENEGADO: debes aceptar las normas del recinto",
+    error: "ACCESO DENEGADO: debes aceptar las normas del recinto",
   }),
 });
 
@@ -145,111 +101,87 @@ export const esquemaReservaBase = z.object({
 // ==========================================
 // Añade las validaciones especiales al esquema base.
 
-export const esquemaReserva = esquemaReservaBase.superRefine(
-  (datos, ctx) => {
+export const esquemaReserva = esquemaReservaBase.superRefine((datos, ctx) => {
+  // --------------------------------------
+  // 1. AUTORIZACIÓN DE MENORES
+  // --------------------------------------
 
-    // --------------------------------------
-    // 1. AUTORIZACIÓN DE MENORES
-    // --------------------------------------
+  if (
+    datos.edad >= EDAD_CON_AUTORIZACION &&
+    datos.edad < EDAD_MINIMA &&
+    !datos.autorizacionTutor
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message:
+        "ACCESO DENEGADO: se requiere autorización del tutor para agentes menores de 18",
+      path: ["autorizacionTutor"],
+    });
+  }
 
-    if (
-      datos.edad >= EDAD_CON_AUTORIZACION &&
-      datos.edad < EDAD_MINIMA &&
-      !datos.autorizacionTutor
-    ) {
+  // --------------------------------------
+  // 2. COMPROBACIÓN DE FPS
+  // --------------------------------------
+
+  if (datos.equipo.tipo === "propio") {
+    const limite = LIMITES_FPS[datos.equipo.replica];
+
+    if (datos.equipo.fps > limite) {
       ctx.addIssue({
         code: "custom",
-        message:
-          "ACCESO DENEGADO: se requiere autorización del tutor para agentes menores de 18",
-        path: ["autorizacionTutor"],
+        message: `Réplica fuera de protocolo: máximo ${limite} FPS`,
+        path: ["equipo", "fps"],
+      });
+    }
+  }
+
+  // --------------------------------------
+  // 3. VALIDACIÓN DE FECHA
+  // --------------------------------------
+
+  const fechaReserva = new Date(datos.fecha + "T00:00:00");
+
+  // Evitar comprobaciones con fechas inválidas
+  if (!Number.isNaN(fechaReserva.getTime())) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    // No permitir fechas anteriores a hoy
+    if (fechaReserva < hoy) {
+      ctx.addIssue({
+        code: "custom",
+        message: "ERROR TEMPORAL: no se permiten operaciones en fechas pasadas",
+        path: ["fecha"],
       });
     }
 
-    // --------------------------------------
-    // 2. COMPROBACIÓN DE FPS
-    // --------------------------------------
+    // Solo sábados y domingos
+    const diaSemana = fechaReserva.getDay();
 
-    if (datos.equipo.tipo === "propio") {
-      const limite =
-        LIMITES_FPS[datos.equipo.replica];
-
-      if (datos.equipo.fps > limite) {
-        ctx.addIssue({
-          code: "custom",
-          message:
-            `Réplica fuera de protocolo: máximo ${limite} FPS`,
-          path: ["equipo", "fps"],
-        });
-      }
+    if (diaSemana !== 0 && diaSemana !== 6) {
+      ctx.addIssue({
+        code: "custom",
+        message: "OPERACIÓN NO AUTORIZADA: las reservas solo se permiten en fin de semana",
+        path: ["fecha"],
+      });
     }
-
-    // --------------------------------------
-    // 3. VALIDACIÓN DE FECHA
-    // --------------------------------------
-
-    const fechaReserva = new Date(
-      datos.fecha + "T00:00:00"
-    );
-
-    // Evitar comprobaciones con fechas inválidas
-    if (!Number.isNaN(fechaReserva.getTime())) {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      // No permitir fechas anteriores a hoy
-      if (fechaReserva < hoy) {
-        ctx.addIssue({
-          code: "custom",
-          message:
-            "ERROR TEMPORAL: no se permiten operaciones en fechas pasadas",
-          path: ["fecha"],
-        });
-      }
-
-      // Solo sábados y domingos
-      const diaSemana = fechaReserva.getDay();
-
-      if (diaSemana !== 0 && diaSemana !== 6) {
-        ctx.addIssue({
-          code: "custom",
-          message:
-            "OPERACIÓN NO AUTORIZADA: las reservas solo se permiten en fin de semana",
-          path: ["fecha"],
-        });
-      }
-    }
-
-    // --------------------------------------
-    // 4. DESIGNACIONES DUPLICADAS
-    // --------------------------------------
-
-    const designaciones = new Set([
-      datos.designacion,
-    ]);
-
-    datos.acompanantes.forEach(
-      (acompanante, i) => {
-        if (
-          designaciones.has(
-            acompanante.designacion
-          )
-        ) {
-          ctx.addIssue({
-            code: "custom",
-            message:
-              "CONFLICTO DE IDENTIDAD: designación de agente duplicada",
-            path: [
-              "acompanantes",
-              i,
-              "designacion",
-            ],
-          });
-        }
-
-        designaciones.add(
-          acompanante.designacion
-        );
-      }
-    );
   }
-);
+
+  // --------------------------------------
+  // 4. DESIGNACIONES DUPLICADAS
+  // --------------------------------------
+
+  const designaciones = new Set([datos.designacion]);
+
+  datos.acompanantes.forEach((acompanante, i) => {
+    if (designaciones.has(acompanante.designacion)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "CONFLICTO DE IDENTIDAD: designación de agente duplicada",
+        path: ["acompanantes", i, "designacion"],
+      });
+    }
+
+    designaciones.add(acompanante.designacion);
+  });
+});

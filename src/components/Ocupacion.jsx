@@ -1,25 +1,12 @@
 import { useReservas } from "../hooks/useReservas";
 import { calcularOcupacion } from "../utils/plazas";
-import {
-  BANDOS,
-  NOMBRES_BANDOS,
-  PLAZAS_POR_BANDO,
-} from "../constantes";
+import { BANDOS, NOMBRES_BANDOS, PLAZAS_POR_BANDO } from "../constantes";
 
 export default function Ocupacion({ fecha }) {
-  const {
-    data: reservas = [],
-    isPending,
-    isError,
-    error,
-  } = useReservas();
+  const { data: reservas = [], isPending, isError, error } = useReservas();
 
   if (!fecha) {
-    return (
-      <p role="status">
-        Selecciona una fecha para consultar las plazas.
-      </p>
-    );
+    return <p role="status">Selecciona una fecha para consultar las plazas.</p>;
   }
 
   if (isPending) {
@@ -40,8 +27,7 @@ export default function Ocupacion({ fecha }) {
         {BANDOS.map((bando, i) => (
           <span key={bando}>
             {i > 0 && " · "}
-            {NOMBRES_BANDOS[bando]}:{" "}
-            {ocupacion[bando]}/{PLAZAS_POR_BANDO}
+            {NOMBRES_BANDOS[bando]}: {ocupacion[bando]}/{PLAZAS_POR_BANDO}
           </span>
         ))}
       </p>

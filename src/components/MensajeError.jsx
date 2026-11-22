@@ -2,7 +2,7 @@ export default function MensajeError({ id, error }) {
   if (!error) return null;
 
   return (
-    <p id={id} role="alert">
+    <p id={id} role="alert" className="error">
       {error.message}
     </p>
   );

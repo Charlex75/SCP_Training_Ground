@@ -2,7 +2,6 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { esquemaReserva } from "../schemas/reserva";
-
 import {
   BANDOS,
   NOMBRES_BANDOS,
@@ -18,11 +17,7 @@ import Campo from "./Campo";
 import MensajeError from "./MensajeError";
 import Ocupacion from "./Ocupacion";
 
-import {
-  useCrearReserva,
-  useReservas,
-} from "../hooks/useReservas";
-
+import { useCrearReserva, useReservas } from "../hooks/useReservas";
 import { calcularOcupacion } from "../utils/plazas";
 
 export default function FormularioReserva() {
@@ -35,7 +30,6 @@ export default function FormularioReserva() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(esquemaReserva),
-
     defaultValues: {
       nombre: "",
       email: "",
@@ -44,12 +38,7 @@ export default function FormularioReserva() {
       autorizacionTutor: false,
       fecha: "",
       bando: "fundacion",
-      equipo: {
-        tipo: "alquiler",
-        talla: "",
-        replica: "",
-        fps: "",
-      },
+      equipo: { tipo: "alquiler", talla: "", replica: "", fps: "" },
       acompanantes: [],
       proteccionOcular: false,
       aceptaNormas: false,
@@ -67,32 +56,16 @@ export default function FormularioReserva() {
   } = useReservas();
 
   // Lista dinámica de acompañantes
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "acompanantes",
-  });
+  const { fields, append, remove } = useFieldArray({ control, name: "acompanantes" });
 
   // Campos observados
-  const tipoEquipo = useWatch({
-    control,
-    name: "equipo.tipo",
-  });
-
-  const edad = useWatch({
-    control,
-    name: "edad",
-  });
-
-  const fechaSeleccionada = useWatch({
-    control,
-    name: "fecha",
-  });
+  const tipoEquipo = useWatch({ control, name: "equipo.tipo" });
+  const edad = useWatch({ control, name: "edad" });
+  const fechaSeleccionada = useWatch({ control, name: "fecha" });
 
   // Autorización necesaria para agentes de 16 y 17 años
   const necesitaAutorizacion =
-    edad !== "" &&
-    Number(edad) >= EDAD_CON_AUTORIZACION &&
-    Number(edad) < EDAD_MINIMA;
+    edad !== "" && Number(edad) >= EDAD_CON_AUTORIZACION && Number(edad) < EDAD_MINIMA;
 
   // Enviar reserva comprobando previamente las plazas
   const onSubmit = (datos) => {
@@ -103,29 +76,20 @@ export default function FormularioReserva() {
     if (cargandoReservas || errorReservas) {
       setError(
         "bando",
-        {
-          type: "manual",
-          message:
-            "ENLACE NO DISPONIBLE: no se puede verificar el aforo",
-        },
+        { type: "manual", message: "ENLACE NO DISPONIBLE: no se puede verificar el aforo" },
         { shouldFocus: true }
       );
       return;
     }
 
     // 2. Calcular la ocupación para la fecha elegida
-    const ocupacion = calcularOcupacion(
-      reservas,
-      datos.fecha
-    );
+    const ocupacion = calcularOcupacion(reservas, datos.fecha);
 
     // 3. Contar las plazas necesarias
-    const plazasNecesarias =
-      1 + datos.acompanantes.length;
+    const plazasNecesarias = 1 + datos.acompanantes.length;
 
     // 4. Calcular las plazas disponibles
-    const plazasDisponibles =
-      PLAZAS_POR_BANDO - ocupacion[datos.bando];
+    const plazasDisponibles = PLAZAS_POR_BANDO - ocupacion[datos.bando];
 
     // 5. Comprobar si el sector está lleno
     if (plazasNecesarias > plazasDisponibles) {
@@ -136,26 +100,16 @@ export default function FormularioReserva() {
           ? "SECTOR SATURADO: solo queda 1 plaza disponible"
           : `SECTOR SATURADO: solo quedan ${disponibles} plazas disponibles`;
 
-      setError(
-        "bando",
-        {
-          type: "manual",
-          message: mensaje,
-        },
-        { shouldFocus: true }
-      );
-
+      setError("bando", { type: "manual", message: mensaje }, { shouldFocus: true });
       return;
     }
 
     // 6. Enviar la reserva si todo es correcto
-    mutacion.mutate(datos, {
-      onSuccess: () => reset(),
-    });
+    mutacion.mutate(datos, { onSuccess: () => reset() });
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form className="formulario" onSubmit={handleSubmit(onSubmit)} noValidate>
       <fieldset>
         <legend>Identificación del agente</legend>
 
@@ -193,7 +147,7 @@ export default function FormularioReserva() {
         />
 
         {necesitaAutorizacion && (
-          <div>
+          <div className="casilla">
             <label htmlFor="autorizacionTutor">
               <input
                 id="autorizacionTutor"
@@ -201,19 +155,13 @@ export default function FormularioReserva() {
                 {...register("autorizacionTutor")}
                 aria-invalid={!!errors.autorizacionTutor}
                 aria-describedby={
-                  errors.autorizacionTutor
-                    ? "autorizacionTutor-error"
-                    : undefined
+                  errors.autorizacionTutor ? "autorizacionTutor-error" : undefined
                 }
               />
-
               Dispongo de autorización de mi tutor
             </label>
 
-            <MensajeError
-              id="autorizacionTutor-error"
-              error={errors.autorizacionTutor}
-            />
+            <MensajeError id="autorizacionTutor-error" error={errors.autorizacionTutor} />
           </div>
         )}
 
@@ -231,28 +179,18 @@ export default function FormularioReserva() {
 
       <fieldset
         aria-invalid={!!errors.bando}
-        aria-describedby={
-          errors.bando ? "bando-error" : undefined
-        }
+        aria-describedby={errors.bando ? "bando-error" : undefined}
       >
         <legend>Asignación de bando</legend>
 
         {BANDOS.map((bando) => (
-          <label key={bando}>
-            <input
-              type="radio"
-              value={bando}
-              {...register("bando")}
-            />
-
+          <label key={bando} className="opcion">
+            <input type="radio" value={bando} {...register("bando")} />
             {NOMBRES_BANDOS[bando]}
           </label>
         ))}
 
-        <MensajeError
-          id="bando-error"
-          error={errors.bando}
-        />
+        <MensajeError id="bando-error" error={errors.bando} />
       </fieldset>
 
       <fieldset>
@@ -260,59 +198,34 @@ export default function FormularioReserva() {
 
         <fieldset
           aria-invalid={!!errors.equipo?.tipo}
-          aria-describedby={
-            errors.equipo?.tipo
-              ? "equipo-tipo-error"
-              : undefined
-          }
+          aria-describedby={errors.equipo?.tipo ? "equipo-tipo-error" : undefined}
         >
           <legend>Tipo de equipo</legend>
 
-          <label>
-            <input
-              type="radio"
-              value="alquiler"
-              {...register("equipo.tipo")}
-            />
-
+          <label className="opcion">
+            <input type="radio" value="alquiler" {...register("equipo.tipo")} />
             Equipo de alquiler
           </label>
 
-          <label>
-            <input
-              type="radio"
-              value="propio"
-              {...register("equipo.tipo")}
-            />
-
+          <label className="opcion">
+            <input type="radio" value="propio" {...register("equipo.tipo")} />
             Equipo propio
           </label>
 
-          <MensajeError
-            id="equipo-tipo-error"
-            error={errors.equipo?.tipo}
-          />
+          <MensajeError id="equipo-tipo-error" error={errors.equipo?.tipo} />
         </fieldset>
 
         {tipoEquipo === "alquiler" && (
-          <div>
-            <label htmlFor="talla">
-              Talla del equipo
-            </label>
+          <div className="campo">
+            <label htmlFor="talla">Talla del equipo</label>
 
             <select
               id="talla"
               {...register("equipo.talla")}
               aria-invalid={!!errors.equipo?.talla}
-              aria-describedby={
-                errors.equipo?.talla
-                  ? "talla-error"
-                  : undefined
-              }
+              aria-describedby={errors.equipo?.talla ? "talla-error" : undefined}
             >
-              <option value="">
-                Selecciona una talla
-              </option>
+              <option value="">Selecciona una talla</option>
 
               {TALLAS.map((talla) => (
                 <option key={talla} value={talla}>
@@ -321,48 +234,31 @@ export default function FormularioReserva() {
               ))}
             </select>
 
-            <MensajeError
-              id="talla-error"
-              error={errors.equipo?.talla}
-            />
+            <MensajeError id="talla-error" error={errors.equipo?.talla} />
           </div>
         )}
 
         {tipoEquipo === "propio" && (
           <>
-            <div>
-              <label htmlFor="replica">
-                Categoría de réplica
-              </label>
+            <div className="campo">
+              <label htmlFor="replica">Categoría de réplica</label>
 
               <select
                 id="replica"
                 {...register("equipo.replica")}
                 aria-invalid={!!errors.equipo?.replica}
-                aria-describedby={
-                  errors.equipo?.replica
-                    ? "replica-error"
-                    : undefined
-                }
+                aria-describedby={errors.equipo?.replica ? "replica-error" : undefined}
               >
-                <option value="">
-                  Selecciona una réplica
-                </option>
+                <option value="">Selecciona una réplica</option>
 
                 {Object.keys(LIMITES_FPS).map((replica) => (
-                  <option
-                    key={replica}
-                    value={replica}
-                  >
+                  <option key={replica} value={replica}>
                     {replica}
                   </option>
                 ))}
               </select>
 
-              <MensajeError
-                id="replica-error"
-                error={errors.equipo?.replica}
-              />
+              <MensajeError id="replica-error" error={errors.equipo?.replica} />
             </div>
 
             <Campo
@@ -381,40 +277,27 @@ export default function FormularioReserva() {
         <legend>Personal acompañante</legend>
 
         {fields.map((field, i) => (
-          <div key={field.id}>
+          <div key={field.id} className="acompanante">
             <Campo
               id={`acompanante-${i}`}
               etiqueta={`Designación del agente ${i + 1}`}
-              registro={register(
-                `acompanantes.${i}.designacion`
-              )}
-              error={
-                errors.acompanantes?.[i]?.designacion
-              }
+              registro={register(`acompanantes.${i}.designacion`)}
+              error={errors.acompanantes?.[i]?.designacion}
             />
 
-            <button
-              type="button"
-              onClick={() => remove(i)}
-            >
+            <button type="button" className="boton-secundario" onClick={() => remove(i)}>
               Quitar agente
             </button>
           </div>
         ))}
 
-        <MensajeError
-          id="acompanantes-error"
-          error={errors.acompanantes?.root}
-        />
+        <MensajeError id="acompanantes-error" error={errors.acompanantes?.root} />
 
         <button
           type="button"
-          onClick={() =>
-            append({ designacion: "" })
-          }
-          disabled={
-            fields.length >= MAX_ACOMPANANTES
-          }
+          className="boton-secundario"
+          onClick={() => append({ designacion: "" })}
+          disabled={fields.length >= MAX_ACOMPANANTES}
         >
           Añadir agente
         </button>
@@ -423,70 +306,49 @@ export default function FormularioReserva() {
       <fieldset>
         <legend>Protocolos de seguridad</legend>
 
-        <div>
+        <div className="casilla">
           <label htmlFor="proteccionOcular">
             <input
               id="proteccionOcular"
               type="checkbox"
               {...register("proteccionOcular")}
               aria-invalid={!!errors.proteccionOcular}
-              aria-describedby={
-                errors.proteccionOcular
-                  ? "proteccionOcular-error"
-                  : undefined
-              }
+              aria-describedby={errors.proteccionOcular ? "proteccionOcular-error" : undefined}
             />
-
             Confirmo el uso de protección ocular
           </label>
 
-          <MensajeError
-            id="proteccionOcular-error"
-            error={errors.proteccionOcular}
-          />
+          <MensajeError id="proteccionOcular-error" error={errors.proteccionOcular} />
         </div>
 
-        <div>
+        <div className="casilla">
           <label htmlFor="aceptaNormas">
             <input
               id="aceptaNormas"
               type="checkbox"
               {...register("aceptaNormas")}
               aria-invalid={!!errors.aceptaNormas}
-              aria-describedby={
-                errors.aceptaNormas
-                  ? "aceptaNormas-error"
-                  : undefined
-              }
+              aria-describedby={errors.aceptaNormas ? "aceptaNormas-error" : undefined}
             />
-
             Acepto las normas del recinto
           </label>
 
-          <MensajeError
-            id="aceptaNormas-error"
-            error={errors.aceptaNormas}
-          />
+          <MensajeError id="aceptaNormas-error" error={errors.aceptaNormas} />
         </div>
       </fieldset>
 
-      <button
-        type="submit"
-        disabled={mutacion.isPending}
-      >
-        {mutacion.isPending
-          ? "Procesando…"
-          : "Solicitar despliegue"}
+      <button type="submit" disabled={mutacion.isPending}>
+        {mutacion.isPending ? "Procesando…" : "Solicitar despliegue"}
       </button>
 
       {mutacion.isSuccess && (
-        <p role="status">
+        <p role="status" className="aviso-ok">
           Despliegue autorizado. Preséntese en el Sitio a las 09:00
         </p>
       )}
 
       {mutacion.isError && (
-        <p role="alert">
+        <p role="alert" className="error">
           {mutacion.error.message}
         </p>
       )}

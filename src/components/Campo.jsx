@@ -1,14 +1,8 @@
 import MensajeError from "./MensajeError";
 
-export default function Campo({
-  id,
-  etiqueta,
-  error,
-  registro,
-  ...resto
-}) {
+export default function Campo({ id, etiqueta, error, registro, ...resto }) {
   return (
-    <div>
+    <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
 
       <input
@@ -16,15 +10,10 @@ export default function Campo({
         {...registro}
         {...resto}
         aria-invalid={!!error}
-        aria-describedby={
-          error ? `${id}-error` : undefined
-        }
+        aria-describedby={error ? `${id}-error` : undefined}
       />
 
-      <MensajeError
-        id={`${id}-error`}
-        error={error}
-      />
+      <MensajeError id={`${id}-error`} error={error} />
     </div>
   );
 }

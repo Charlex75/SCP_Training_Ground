@@ -1,0 +1,386 @@
+/* Terminal de la Fundación: todos los colores salen de aquí */
+:root {
+  color-scheme: dark;
+
+  --fondo: #0d0e10;
+  --panel: #16181b;
+  --panel-claro: #1e2125;
+  --borde: #2e3237;
+  --texto: #e4e6e8;
+  --suave: #9aa1a8;
+  --acento: #e8e8e8;
+  --fundacion: #5b9bd5;
+  --insurgencia: #5fbf6e;
+  --error: #ff6b6b;
+  --ok: #6fd08c;
+  --aviso: #f2b84b;
+  --radio: 6px;
+  --mono: "Consolas", "Courier New", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  color: var(--texto);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.015) 3px 4px),
+    radial-gradient(circle at 50% 0, #1b1e23 0, var(--fondo) 70%);
+  background-attachment: fixed;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Cabecera --- */
+
+.cabecera {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--borde);
+  text-align: center;
+}
+
+.clasificacion {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 4px 12px;
+  border: 2px solid var(--error);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--error);
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lema {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+h2,
+h3 {
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+}
+
+h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* --- Distribución: formulario y registro lado a lado --- */
+
+.contenedor-reservas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .contenedor-reservas {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+.panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--panel);
+}
+
+/* --- Formulario --- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+fieldset fieldset {
+  margin-bottom: 12px;
+}
+
+legend {
+  padding: 0 6px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+label {
+  font-weight: 600;
+}
+
+input,
+select {
+  font: inherit;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  color: var(--texto);
+  background: var(--panel-claro);
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--acento);
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--aviso);
+  outline-offset: 2px;
+}
+
+/* El campo marcado como inválido por aria-invalid */
+[aria-invalid="true"]:is(input, select) {
+  border-color: var(--error);
+}
+
+fieldset[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+/* Radios y casillas */
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 20px 4px 0;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.casilla {
+  margin-bottom: 8px;
+}
+
+.casilla label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Acompañantes */
+.acompanante {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.acompanante .boton-secundario {
+  margin-bottom: 12px;
+}
+
+/* Ocupación por bando */
+.formulario section[aria-label="Ocupación por bando"] {
+  padding: 10px 12px;
+  border-left: 3px solid var(--aviso);
+  background: var(--panel-claro);
+}
+
+.formulario section[aria-label="Ocupación por bando"] h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+.formulario section[aria-label="Ocupación por bando"] p {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+}
+
+/* --- Mensajes --- */
+
+.error {
+  margin: 2px 0 0;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--error);
+}
+
+.error::before {
+  content: "▲ ";
+}
+
+.aviso-ok {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ok);
+  border-radius: var(--radio);
+  font-family: var(--mono);
+  color: var(--ok);
+}
+
+[role="status"] {
+  color: var(--suave);
+}
+
+[role="status"].aviso-ok {
+  color: var(--ok);
+}
+
+/* --- Botones --- */
+
+button {
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 18px;
+  border: 1px solid var(--acento);
+  border-radius: var(--radio);
+  color: var(--fondo);
+  background: var(--acento);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.formulario > button[type="submit"] {
+  align-self: flex-start;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.boton-secundario {
+  padding: 6px 12px;
+  color: var(--texto);
+  background: transparent;
+  border-color: var(--borde);
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background: var(--panel-claro);
+}
+
+.boton-peligro {
+  padding: 6px 12px;
+  color: var(--error);
+  background: transparent;
+  border-color: var(--error);
+}
+
+.boton-peligro:hover:not(:disabled) {
+  color: var(--fondo);
+  background: var(--error);
+}
+
+/* --- Registro de agentes --- */
+
+.filtro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.filtro label {
+  flex-basis: 100%;
+}
+
+.filtro input {
+  width: auto;
+}
+
+.lista-agentes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.ficha {
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-left-width: 4px;
+  border-radius: var(--radio);
+  background: var(--panel-claro);
+}
+
+.ficha-fundacion {
+  border-left-color: var(--fundacion);
+}
+
+.ficha-insurgencia {
+  border-left-color: var(--insurgencia);
+}
+
+.ficha p {
+  margin: 2px 0;
+  font-size: 0.95rem;
+}
+
+.ficha strong {
+  color: var(--suave);
+  font-weight: 600;
+}
+
+.ficha .boton-peligro {
+  margin-top: 8px;
+}

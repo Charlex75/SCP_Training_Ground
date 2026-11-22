@@ -3,8 +3,7 @@ export function calcularOcupacion(reservas, fecha) {
     .filter((reserva) => reserva.fecha === fecha)
     .reduce(
       (ocupacion, reserva) => {
-        const plazasOcupadas =
-          1 + reserva.acompanantes.length;
+        const plazasOcupadas = 1 + reserva.acompanantes.length;
 
         if (Object.hasOwn(ocupacion, reserva.bando)) {
           ocupacion[reserva.bando] += plazasOcupadas;
@@ -12,9 +11,6 @@ export function calcularOcupacion(reservas, fecha) {
 
         return ocupacion;
       },
-      {
-        fundacion: 0,
-        insurgencia: 0,
-      }
+      { fundacion: 0, insurgencia: 0 }
     );
 }
