@@ -1,9 +1,10 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { esquemaReserva } from "../schemas/reserva";
 import {
   BANDOS,
+  NOMBRES_BANDOS,
   TALLAS,
   LIMITES_FPS,
   EDAD_CON_AUTORIZACION,
@@ -14,12 +15,14 @@ import {
 import Campo from "./Campo";
 import MensajeError from "./MensajeError";
 
+import { useCrearReserva } from "../hooks/useReservas";
+
 export default function FormularioReserva() {
   const {
     register,
     handleSubmit,
-    watch,
     control,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(esquemaReserva),
@@ -44,6 +47,8 @@ export default function FormularioReserva() {
     },
   });
 
+  const mutacion = useCrearReserva();
+
   // Lista dinámica de acompañantes
   const { fields, append, remove } = useFieldArray({
     control,
@@ -51,8 +56,8 @@ export default function FormularioReserva() {
   });
 
   // Campos que determinan qué mostrar
-  const tipoEquipo = watch("equipo.tipo");
-  const edad = watch("edad");
+  const tipoEquipo = useWatch({control, name: "equipo.tipo"});
+  const edad = useWatch({control, name: "edad"});
 
   const necesitaAutorizacion =
     edad !== "" &&
@@ -61,7 +66,9 @@ export default function FormularioReserva() {
 
   // De momento, solo mostramos los datos
   const onSubmit = (datos) => {
-    console.log("RESERVA VALIDADA:", datos);
+    mutacion.mutate(datos, {
+      onSuccess: () => reset(),
+    });
   };
 
   return (
@@ -151,9 +158,7 @@ export default function FormularioReserva() {
               value={bando}
               {...register("bando")}
             />
-            {bando === "fundacion"
-              ? "Fundación SCP"
-              : "Insurgencia del Caos"}
+            {NOMBRES_BANDOS[bando]}
           </label>
         ))}
 
@@ -361,11 +366,23 @@ export default function FormularioReserva() {
         </div>
       </fieldset>
 
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting
-          ? "Procesando…"
-          : "Solicitar despliegue"}
+
+      <button type="submit" disabled={mutacion.isPending}>
+        {mutacion.isPending ? "Procesando…" : "Solicitar despliegue"}
       </button>
+
+      {mutacion.isSuccess && (
+        <p role="status">
+          Despliegue autorizado. Preséntese en el Sitio a las 09:00
+        </p>
+      )}
+
+      {mutacion.isError && (
+        <p role="alert">
+          {mutacion.error.message}
+        </p>
+      )}
+
     </form>
   );
 }

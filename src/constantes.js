@@ -1,5 +1,10 @@
 export const BANDOS = ["fundacion", "insurgencia"];
 
+export const NOMBRES_BANDOS = {
+  fundacion: "Fundación SCP",
+  insurgencia: "Insurgencia del Caos",
+};
+
 export const LIMITES_FPS = {
   pistola: 300,
   fusil: 350,
