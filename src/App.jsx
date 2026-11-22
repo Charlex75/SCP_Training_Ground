@@ -1,17 +1,12 @@
-import { useState } from 'react'
+import FormularioReserva from "./components/FormularioReserva";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div>
-          <h1>Get started</h1>
-        </div>
-      </section>
-    </>
-  )
+    <main>
+      <h1>SCP Training Ground</h1>
+      <FormularioReserva />
+    </main>
+  );
 }
 
-export default App
+export default App;

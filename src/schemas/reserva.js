@@ -37,7 +37,9 @@ const equipoSchema = z.discriminatedUnion("tipo", [
       .int({ error: "Los FPS deben ser un número entero" })
       .positive({ error: "Los FPS deben ser mayores que cero" }),
   }),
-]);
+], {
+  error: "PROTOCOLO DE EQUIPAMIENTO: selecciona un tipo de equipo válido",
+});
 
 // Esquema principal de reserva
 export const esquemaReserva = z
@@ -99,6 +101,7 @@ export const esquemaReserva = z
 
     // 1. Autorización de menores
     if (
+      datos.edad >= EDAD_CON_AUTORIZACION &&
       datos.edad < EDAD_MINIMA &&
       !datos.autorizacionTutor
     ) {
@@ -128,27 +131,30 @@ export const esquemaReserva = z
       datos.fecha + "T00:00:00"
     );
 
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    // Si la fecha es inválida, no comprobamos el día
+    if (!Number.isNaN(fechaReserva.getTime())) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
 
-    if (fechaReserva < hoy) {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "ERROR TEMPORAL: no se permiten operaciones en fechas pasadas",
-        path: ["fecha"],
-      });
-    }
+      if (fechaReserva < hoy) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "ERROR TEMPORAL: no se permiten operaciones en fechas pasadas",
+          path: ["fecha"],
+        });
+      }
 
-    const diaSemana = fechaReserva.getDay();
+      const diaSemana = fechaReserva.getDay();
 
-    if (diaSemana !== 0 && diaSemana !== 6) {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "OPERACIÓN NO AUTORIZADA: las reservas solo se permiten en fin de semana",
-        path: ["fecha"],
-      });
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "OPERACIÓN NO AUTORIZADA: las reservas solo se permiten en fin de semana",
+          path: ["fecha"],
+        });
+      }
     }
 
     // 4. Designaciones duplicadas
